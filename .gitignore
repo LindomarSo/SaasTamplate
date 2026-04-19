@@ -1,0 +1,41 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+*.rsuser
+
+## Environment files — NUNCA commite segredos
+.env
+.env.local
+*.env
+
+## Publicação
+publish/
+out/
+
+## Migrations (opcional — remova se quiser versionar)
+# **/Migrations/
+
+## Logs
+*.log
+logs/
+
+## Certificados e chaves
+*.pem
+*.key
+*.pfx
+*.p12
+
+## OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+## Rider / VS Code
+.idea/
+.vscode/
+*.DotSettings.user
