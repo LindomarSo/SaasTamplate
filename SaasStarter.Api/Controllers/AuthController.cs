@@ -19,26 +19,22 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
     {
         var result = await _authService.RegisterAsync(request, cancellationToken);
-        return CreatedAtAction(nameof(Register), new { id = result.UserId }, result);
+        if (result.IsSuccess)
+            return CreatedAtAction(nameof(Register), new { id = result.Value!.UserId }, result.Value);
+        return Ok(result); // DomainResultFilter converte para o status de erro adequado
     }
 
     [HttpPost("login")]
     [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)
-    {
-        var result = await _authService.LoginAsync(request, cancellationToken);
-        return Ok(result);
-    }
+        => Ok(await _authService.LoginAsync(request, cancellationToken));
 
     [HttpPost("confirm-email")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailRequest request, CancellationToken cancellationToken)
-    {
-        await _authService.ConfirmEmailAsync(request, cancellationToken);
-        return NoContent();
-    }
+        => Ok(await _authService.ConfirmEmailAsync(request, cancellationToken));
 
     [HttpPost("forgot-password")]
     [ProducesResponseType(StatusCodes.Status202Accepted)]
@@ -52,19 +48,13 @@ public class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request, CancellationToken cancellationToken)
-    {
-        await _authService.ResetPasswordAsync(request, cancellationToken);
-        return NoContent();
-    }
+        => Ok(await _authService.ResetPasswordAsync(request, cancellationToken));
 
     [HttpPost("google")]
     [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> LoginWithGoogle([FromBody] GoogleLoginRequest request, CancellationToken cancellationToken)
-    {
-        var result = await _authService.LoginWithGoogleAsync(request, cancellationToken);
-        return Ok(result);
-    }
+        => Ok(await _authService.LoginWithGoogleAsync(request, cancellationToken));
 
     [HttpPost("resend-confirmation")]
     [ProducesResponseType(StatusCodes.Status202Accepted)]

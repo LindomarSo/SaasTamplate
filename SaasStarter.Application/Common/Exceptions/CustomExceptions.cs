@@ -1,9 +1,7 @@
 namespace SaasStarter.Application.Common.Exceptions;
 
-public class EmailNotConfirmedException(string message) : Exception(message);
-
 /// <summary>
-/// Lançar quando o usuário ultrapassar os limites do plano.
-/// Mapeada para 403 Forbidden no GlobalExceptionHandlerMiddleware.
+/// Use DomainError.PlanLimitExceeded() para retornar via Result em vez de lançar esta exceção.
+/// Mantida para compatibilidade com code fora do fluxo de controllers (ex: middlewares futuros).
 /// </summary>
 public class PlanLimitExceededException(string message) : Exception(message);

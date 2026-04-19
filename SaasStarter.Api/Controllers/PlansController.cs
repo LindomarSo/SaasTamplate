@@ -28,19 +28,13 @@ public class PlansController : ControllerBase
     [HttpGet("catalog")]
     [ProducesResponseType(typeof(IEnumerable<PublicPlanCatalogResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCatalog(CancellationToken cancellationToken)
-    {
-        var result = await _planService.GetPublicCatalogAsync(cancellationToken);
-        return Ok(result);
-    }
+        => Ok(await _planService.GetPublicCatalogAsync(cancellationToken));
 
     /// <summary>Lista planos disponíveis destacando o plano atual do usuário.</summary>
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<AvailablePlanResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
-    {
-        var result = await _planService.GetAvailablePlansAsync(User.GetUserId(), cancellationToken);
-        return Ok(result);
-    }
+        => Ok(await _planService.GetAvailablePlansAsync(User.GetUserId(), cancellationToken));
 
     /// <summary>Retorna o plano ativo do usuário autenticado.</summary>
     [HttpGet("current")]
@@ -57,12 +51,8 @@ public class PlansController : ControllerBase
     /// </summary>
     [HttpPost("activate")]
     [ProducesResponseType(typeof(CreateCheckoutSessionResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Activate([FromBody] ActivatePlanRequest request, CancellationToken cancellationToken)
-    {
-        var result = await _paymentService.CreateCheckoutSessionAsync(
-            User.GetUserId(), User.GetUserEmail(), request.PlanId, cancellationToken: cancellationToken);
-
-        return Ok(result);
-    }
+        => Ok(await _paymentService.CreateCheckoutSessionAsync(
+            User.GetUserId(), User.GetUserEmail(), request.PlanId, cancellationToken: cancellationToken));
 }

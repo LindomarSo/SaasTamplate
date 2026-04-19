@@ -28,16 +28,12 @@ public class PaymentsController : ControllerBase
     [HttpPost("create-checkout-session")]
     [ProducesResponseType(typeof(CreateCheckoutSessionResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> CreateCheckoutSession(
         [FromBody] CreateCheckoutSessionRequest request,
         CancellationToken cancellationToken)
-    {
-        var result = await _paymentService.CreateCheckoutSessionAsync(
-            User.GetUserId(), User.GetUserEmail(), request.PlanId, request.PromoCode, cancellationToken);
-
-        return Ok(result);
-    }
+        => Ok(await _paymentService.CreateCheckoutSessionAsync(
+            User.GetUserId(), User.GetUserEmail(), request.PlanId, request.PromoCode, cancellationToken));
 
     /// <summary>
     /// Webhook do Stripe. Chamado exclusivamente pelo Stripe.
@@ -63,19 +59,6 @@ public class PaymentsController : ControllerBase
             return BadRequest("Cabeçalho Stripe-Signature ausente.");
         }
 
-        try
-        {
-            await _paymentService.HandleWebhookAsync(payload, stripeSignature, cancellationToken);
-            return Ok();
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return Unauthorized();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao processar webhook do Stripe.");
-            return StatusCode(StatusCodes.Status500InternalServerError);
-        }
+        return Ok(await _paymentService.HandleWebhookAsync(payload, stripeSignature, cancellationToken));
     }
 }

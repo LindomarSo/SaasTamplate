@@ -1,3 +1,4 @@
+using SaasStarter.Application.Common;
 using SaasStarter.Application.Common.Interfaces;
 using SaasStarter.Domain.Entities;
 
@@ -35,11 +36,11 @@ public class PromotionService : IPromotionService
         return new ValidatePromoCodeResponse(true, discountedPrice, discountAmount, null);
     }
 
-    public async Task CreateAsync(CreatePromoCodeRequest request, CancellationToken cancellationToken = default)
+    public async Task<Result> CreateAsync(CreatePromoCodeRequest request, CancellationToken cancellationToken = default)
     {
         var existing = await _promotionCodeRepository.GetByCodeAsync(request.Code, cancellationToken);
         if (existing is not null)
-            throw new InvalidOperationException($"Código '{request.Code}' já existe.");
+            return DomainError.Conflict($"Código '{request.Code}' já existe.");
 
         var promo = PromotionCode.Create(
             request.Code,
@@ -50,5 +51,7 @@ public class PromotionService : IPromotionService
 
         await _promotionCodeRepository.AddAsync(promo, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return Result.Success();
     }
 }

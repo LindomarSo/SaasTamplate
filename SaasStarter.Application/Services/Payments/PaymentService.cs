@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using SaasStarter.Application.Common;
 using SaasStarter.Application.Common.Interfaces;
 using SaasStarter.Domain.Entities;
 
@@ -29,15 +30,16 @@ public class PaymentService : IPaymentService
         _logger = logger;
     }
 
-    public async Task<CreateCheckoutSessionResponse> CreateCheckoutSessionAsync(
+    public async Task<Result<CreateCheckoutSessionResponse>> CreateCheckoutSessionAsync(
         Guid userId,
         string userEmail,
         Guid planDefinitionId,
         string? promoCode = null,
         CancellationToken cancellationToken = default)
     {
-        var plan = await _subscriptionRepository.GetPlanDefinitionByIdAsync(planDefinitionId, cancellationToken)
-            ?? throw new InvalidOperationException($"Plano '{planDefinitionId}' não encontrado.");
+        var plan = await _subscriptionRepository.GetPlanDefinitionByIdAsync(planDefinitionId, cancellationToken);
+        if (plan is null)
+            return DomainError.NotFound($"Plano '{planDefinitionId}' não encontrado.");
 
         decimal? discountedPrice = null;
         decimal? discountAmount = null;
@@ -46,7 +48,7 @@ public class PaymentService : IPaymentService
         {
             var promo = await _promotionCodeRepository.GetByCodeAsync(promoCode, cancellationToken);
             if (promo is null || !promo.IsValid())
-                throw new InvalidOperationException("Código promocional inválido ou expirado.");
+                return DomainError.Invalid("Código promocional inválido ou expirado.");
 
             discountedPrice = promo.ApplyTo(plan.Price);
             discountAmount = plan.Price - discountedPrice;
@@ -61,7 +63,7 @@ public class PaymentService : IPaymentService
         return new CreateCheckoutSessionResponse(result.CheckoutUrl, plan.Price, discountedPrice ?? plan.Price, discountAmount);
     }
 
-    public async Task HandleWebhookAsync(
+    public async Task<Result> HandleWebhookAsync(
         string payload,
         string stripeSignature,
         CancellationToken cancellationToken = default)
@@ -75,7 +77,7 @@ public class PaymentService : IPaymentService
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Assinatura de webhook Stripe inválida.");
-            throw new UnauthorizedAccessException("Assinatura de webhook inválida.");
+            return DomainError.Unauthorized("Assinatura de webhook inválida.");
         }
 
         _logger.LogInformation("Webhook Stripe recebido. Tipo: {EventType}", webhookEvent.Type);
@@ -86,12 +88,10 @@ public class PaymentService : IPaymentService
                 await HandleCheckoutSessionCompletedAsync(webhookEvent, cancellationToken);
                 break;
 
-            // Boleto pago de forma assíncrona
             case "checkout.session.async_payment_succeeded":
                 await HandleAsyncPaymentSucceededAsync(webhookEvent, cancellationToken);
                 break;
 
-            // Boleto expirado ou falhou
             case "checkout.session.async_payment_failed":
                 await HandleAsyncPaymentFailedAsync(webhookEvent, cancellationToken);
                 break;
@@ -100,6 +100,8 @@ public class PaymentService : IPaymentService
                 _logger.LogDebug("Evento Stripe ignorado: {EventType}", webhookEvent.Type);
                 break;
         }
+
+        return Result.Success();
     }
 
     private async Task HandleCheckoutSessionCompletedAsync(
@@ -119,7 +121,6 @@ public class PaymentService : IPaymentService
         var payment = Payment.Create(userId, planDefinitionId, webhookEvent.SessionId, amountInBrl, webhookEvent.PaymentIntentId);
         await _paymentRepository.AddAsync(payment, cancellationToken);
 
-        // Boleto ainda não pago — aguarda evento assíncrono
         if (webhookEvent.PaymentStatus != "paid")
         {
             await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -175,7 +176,7 @@ public class PaymentService : IPaymentService
         CancellationToken cancellationToken)
     {
         var plan = await _subscriptionRepository.GetPlanDefinitionByIdAsync(planDefinitionId, cancellationToken)
-            ?? throw new InvalidOperationException($"Plano '{planDefinitionId}' não encontrado.");
+            ?? throw new InvalidOperationException($"Plano '{planDefinitionId}' não encontrado no webhook.");
 
         payment.MarkAsCompleted(webhookEvent.PaymentIntentId ?? webhookEvent.SessionId);
 

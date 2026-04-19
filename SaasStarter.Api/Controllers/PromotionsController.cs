@@ -18,20 +18,17 @@ public class PromotionsController : ControllerBase
     [HttpPost("validate")]
     [ProducesResponseType(typeof(ValidatePromoCodeResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> Validate([FromBody] ValidatePromoCodeRequest request, CancellationToken cancellationToken)
-    {
-        var result = await _promotionService.ValidateAsync(request, cancellationToken);
-        return Ok(result);
-    }
+        => Ok(await _promotionService.ValidateAsync(request, cancellationToken));
 
     /// <summary>Cria um novo código promocional. Restrito a administradores.</summary>
     [Authorize(Roles = "Admin")]
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Create([FromBody] CreatePromoCodeRequest request, CancellationToken cancellationToken)
     {
-        await _promotionService.CreateAsync(request, cancellationToken);
-        return Created();
+        var result = await _promotionService.CreateAsync(request, cancellationToken);
+        if (result.IsSuccess) return Created();
+        return Ok(result); // DomainResultFilter converte para o status de erro adequado
     }
 }

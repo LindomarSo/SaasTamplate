@@ -1,12 +1,14 @@
+using SaasStarter.Application.Common;
+
 namespace SaasStarter.Application.Services.Auth;
 
 public interface IAuthService
 {
-    Task<RegisterResponse> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default);
-    Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default);
-    Task ConfirmEmailAsync(ConfirmEmailRequest request, CancellationToken cancellationToken = default);
-    Task ForgotPasswordAsync(ForgotPasswordRequest request, CancellationToken cancellationToken = default);
-    Task ResetPasswordAsync(ResetPasswordRequest request, CancellationToken cancellationToken = default);
-    Task<LoginResponse> LoginWithGoogleAsync(GoogleLoginRequest request, CancellationToken cancellationToken = default);
-    Task ResendEmailConfirmationAsync(ResendEmailConfirmationRequest request, CancellationToken cancellationToken = default);
+    Task<Result<RegisterResponse>> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default);
+    Task<Result<LoginResponse>> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default);
+    Task<Result> ConfirmEmailAsync(ConfirmEmailRequest request, CancellationToken cancellationToken = default);
+    Task<Result> ForgotPasswordAsync(ForgotPasswordRequest request, CancellationToken cancellationToken = default);
+    Task<Result> ResetPasswordAsync(ResetPasswordRequest request, CancellationToken cancellationToken = default);
+    Task<Result<LoginResponse>> LoginWithGoogleAsync(GoogleLoginRequest request, CancellationToken cancellationToken = default);
+    Task<Result> ResendEmailConfirmationAsync(ResendEmailConfirmationRequest request, CancellationToken cancellationToken = default);
 }

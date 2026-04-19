@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using SaasStarter.Api.Filters;
 using SaasStarter.Api.Middleware;
 using SaasStarter.Application;
 using SaasStarter.Infra;
@@ -15,7 +16,8 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 // ─── Controllers ─────────────────────────────────────────────────────────────
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+    options.Filters.Add<DomainResultFilter>());
 
 // ─── OpenAPI ──────────────────────────────────────────────────────────────────
 builder.Services.AddOpenApi(options =>
